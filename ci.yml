@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  python-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run ParkPredict engine test suite
+        run: python parkpredict/solution.py
+
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Lighthouse
+        run: npm install -g lighthouse
+      - name: Serve app
+        run: |
+          npx --yes serve parkpredict -l 3000 &
+          sleep 3
+      - name: Run Lighthouse (assert 100s)
+        run: |
+          CHROME_PATH=$(which google-chrome || which chromium || which chromium-browser) \
+          lighthouse http://localhost:3000 --quiet \
+            --chrome-flags="--headless --no-sandbox" \
+            --output=json --output-path=lh.json \
+            --only-categories=performance,accessibility,best-practices,seo
+          node -e "
+            const r = require('./lh.json');
+            let fail = false;
+            for (const [k, v] of Object.entries(r.categories)) {
+              const s = Math.round(v.score * 100);
+              console.log(k, s);
+              if (s < 100) fail = true;
+            }
+            process.exit(fail ? 1 : 0);
+          "

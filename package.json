@@ -1,0 +1,9 @@
+{
+  "name": "parkpredict",
+  "version": "2.0.0",
+  "private": true,
+  "description": "ParkPredict 2.0 — AI-Powered Multi-Location Smart Parking Platform (static demo)",
+  "scripts": {
+    "start": "npx --yes serve . -l 3000"
+  }
+}
